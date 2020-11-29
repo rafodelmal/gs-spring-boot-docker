@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: "rafoclusteraks-dd0d"
+    labels:
+        app: "rafoclusteraks-dd0d"
+    annotations:
+        kubernetes.io/ingress.class: addon-http-application-routing
+spec:
+    rules:
+        - host: rafoclusteraksb64b-rafoclusteraks-dd0d.c91830a7f55f4c348d17.eastus.aksapp.io
+          http:
+            paths:
+            - path: /
+              backend:
+                serviceName: "rafoclusteraks-dd0d"
+                servicePort: 80
