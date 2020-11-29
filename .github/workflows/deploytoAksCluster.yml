@@ -1,0 +1,51 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: rafodelmalcontainerregistry.azurecr.io
+        username: ${{ secrets.acr_rafodelmalcontainerregistry_username }}
+        password: ${{ secrets.acr_rafodelmalcontainerregistry_password }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/complete" -f  "complete/Dockerfile" -t rafodelmalcontainerregistry.azurecr.io/rafoclusteraks:${{ github.sha }}
+        docker push rafodelmalcontainerregistry.azurecr.io/rafoclusteraks:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.aks_rafoclusteraks_kubeConfig }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep rafoclusteraksb64b | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace rafoclusteraksb64b`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: rafoclusteraksb64b
+        container-registry-url: rafodelmalcontainerregistry.azurecr.io
+        container-registry-username: ${{ secrets.acr_rafodelmalcontainerregistry_username }}
+        container-registry-password: ${{ secrets.acr_rafodelmalcontainerregistry_password }}
+        secret-name: rafoclusteradockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: rafoclusteraksb64b
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+          manifests/ingress.yml
+        images: |
+          rafodelmalcontainerregistry.azurecr.io/rafoclusteraks:${{ github.sha }}
+        imagepullsecrets: |
+          rafoclusteradockerauth
