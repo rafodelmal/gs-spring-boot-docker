@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "rafoclusteraks-dd0d"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "rafoclusteraks-dd0d"
+  template:
+    metadata:
+      labels:
+        app: "rafoclusteraks-dd0d"
+    spec:
+      containers:
+        - name: "rafoclusteraks-dd0d"
+          image: "rafodelmalcontainerregistry.azurecr.io/rafoclusteraks"
+          ports:
+          - containerPort: 80
